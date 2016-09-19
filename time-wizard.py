@@ -501,7 +501,7 @@ def pomodoro(arg_dict={}):
                     old_reminded_task_list = new_reminded_task_list
                     alarm_ring = True
                 # show pomodoro
-                output = '\r' + state.capitalize() + ' ' + get_formatted_counter(counter)
+                output = '\r\033[1;37m' + state.upper() + '\033[0;0m ' + get_formatted_counter(counter)
                 sys.stdout.write(output.ljust(30, ' '))
                 sys.stdout.flush()
                 # read user input
