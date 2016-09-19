@@ -2,7 +2,7 @@
 
 Kanban, Pomodoro, and task reminder for Tmux user
 
-![Time Wizard](goFrendiAsgard.github.com/time-wizard/time-wizard.jpg)
+![Time Wizard](time-wizard.jpg)
 
 ##KANBAN & POMODORO
 
