@@ -1,1 +1,6 @@
-{"tasks": {"3": {"tasks": "", "remind_on": "07:00", "boards": "", "board": "2", "remind_for": 1800, "name": "change the world"}}, "boards": {"1": "To do", "3": "Done", "2": "Doing", "4": "Scheduled"}}
+{"tasks": {
+    "1":{"remind_for": 1800, "remind_on": "Tuesday 10:15", "id": "1", "name": "P. Dasar II (A)", "board": "4"}, 
+    "2":{"board": "4", "remind_on": "Tuesday 07:45", "remind_for": 1800, "name": "Web Lanjut (C)", "id": "2"}, 
+    "3":{"remind_for": 1800, "remind_on": "Tuesday 12:45", "id": "3", "name": "Web Lanjut (D)", "board": "4"}, 
+    "4":{"remind_on": "Friday 07:45", "board": "4", "name": "I.R. (A)", "remind_for": 1800}
+}, "boards": {"1": "To do", "3": "Done", "2": "Doing", "4": "Scheduled"}}

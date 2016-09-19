@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-import os, re, json, time, threading, sys, termios, fcntl
+import os, re, json, time, datetime, threading, sys, termios, fcntl
 
 #global variables
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -281,6 +280,20 @@ def print_table(array):
         separator = '-' if row_index>0 else '='
         print(''.ljust(total_width+(3*(len(row)-1)) , separator))
 
+def get_reminded_tasks():
+    kanban = load_kanban()
+    tasks = kanban["tasks"]
+    current_time = time.time()
+    reminded_tasks = {}
+    for task_id in tasks.keys():
+        task = tasks[task_id]
+        if complete_str_timestamp(task["remind_on"].strip()) != "":
+            time_start = str_to_timestamp(task["remind_on"])
+            time_stop = time_start + float(task["remind_for"])
+            if time_start < current_time and time_stop > current_time:
+                reminded_tasks[task_id] = task
+    return reminded_tasks
+
 def add_task(arg_dict={}):
     kanban = load_kanban()
     if 'name' in arg_dict.keys():
@@ -445,11 +458,14 @@ def kanban(arg_dict={}):
 def pomodoro(arg_dict={}):
     config = load_configuration()
     kanban = load_kanban()
-    reminded_task_list = []
+    old_reminded_task_list = []
     paused = False
-    state = 'work'
     play_alarm = False
+    alarm_ring = False
+    play_tick = config['play_tick']
+    state = 'work'
     counter = config['work_time']
+    small_counter = 0
     # get fd etc
     fd = sys.stdin.fileno()
     oldterm = termios.tcgetattr(fd)
@@ -459,35 +475,51 @@ def pomodoro(arg_dict={}):
     oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
     try:
-        print '(c) Close     (t) Toggle Mode     (space) Pause/Resume'
-        print '          (r) Reload    (s) Turn Off Alarm'
+        print '(q) Quit        (t) Toggle Mode     (space) Pause/Resume'
+        print '   (k) Toggle tick    (r) Reload    (s) Turn Off Alarm'
         while True:
             try:
-                time.sleep(1)
+                # small counter is used to make the system more responsive
+                time.sleep(0.1)
+                small_counter += 1
+                if small_counter == 10:
+                    small_counter = 0
+                    if not paused:
+                        counter -= 1
+                        if counter == 0:
+                            switch_beep()
+                            # Switch state
+                            state = 'work' if state == 'rest' else 'rest'
+                            counter = config[state + '_time']
+                    if play_alarm and alarm_ring:
+                        alarm_beep()
+                    elif play_tick:
+                        tick_beep()
+                # show tasks
+                new_reminded_task_list = get_reminded_tasks()
+                if new_reminded_task_list != old_reminded_task_list:
+                    old_reminded_task_list = new_reminded_task_list
+                    alarm_ring = True
+                # show pomodoro
                 output = '\r' + state.capitalize() + ' ' + get_formatted_counter(counter)
-                sys.stdout.write(output.ljust(50, ' '))
+                sys.stdout.write(output.ljust(30, ' '))
                 sys.stdout.flush()
-                if not paused:
-                    counter -= 1
-                    if counter == 0:
-                        switch_beep()
-                        # Switch state
-                        state = 'work' if state == 'rest' else 'rest'
-                        counter = config[state + '_time']
-                # read
+                # read user input
                 try:
                     user_input = sys.stdin.read(1)
                     if user_input == ' ': # Pause/resume
                         paused = not paused
-                    elif user_input == 'c': # Close
+                    elif user_input == 'q': # Close
                         break
                     elif user_input == 't': # Switch state
-                        state = 'work' if state == 'rest' else 'rest' 
+                        state = 'work' if state == 'rest' else 'rest'
                         counter = config[state + '_time']
                     elif user_input == 'r': # Reload kanban
                         kanban = load_kanban()
                     elif user_input == 's': # Turn off alarm
                         play_alarm = False
+                    elif user_input == 'k':
+                        play_tick = not play_tick
                 except IOError:
                     pass
             except(KeyboardInterrupt):
