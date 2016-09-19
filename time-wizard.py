@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, re, json, time, threading, sys
+import os, re, json, time, threading, sys, termios, fcntl
 
 #global variables
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -14,7 +14,7 @@ DATE_SUFFIX = ['', 'st', 'nd', 'rd', 'th']
 DEFAULT_CONFIGURATION = {
         'work_time' : 25 * 60,
         'rest_time' : 5 * 60,
-        'sound_player' : 'canberra-gtk-play --file="%s" > /dev/null 2&1 || true',
+        'sound_player' : 'canberra-gtk-play --file "%s" &> /dev/null',
         'tick_sound_file' : os.path.join(DIR_PATH, '.time-wizard/tick.ogg'),
         'alarm_sound_file' : os.path.join(DIR_PATH, '.time-wizard/alarm.ogg'),
         'switch_sound_file' : os.path.join(DIR_PATH, '.time-wizard/switch.ogg'),
@@ -148,7 +148,7 @@ def save_kanban(kanban):
 def beep(file_name):
     configuration = load_configuration()
     sound_player = configuration['sound_player']
-    os.popen(sound_player %(file_name,))
+    os.system(sound_player %(file_name,))
 
 def tick_beep():
     configuration = load_configuration()
@@ -222,6 +222,13 @@ def str_to_timestamp(string):
 def timestamp_to_str(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
 
+def get_formatted_counter(counter):
+    counter = int(counter)
+    (hour, minute) = divmod(counter, 3600)
+    (minute, second) = divmod(minute, 60)
+    (hour, minute, second) = (str(hour).rjust(2,'0'), str(minute).rjust(2,'0'), str(second).rjust(2,'0'))
+    return '%s:%s:%s' %(hour, minute, second)
+
 '''
 @input: string
 @output: dictionary
@@ -250,6 +257,29 @@ def str_as_dictionary(string):
             dictionary[key] = float(val)
     return dictionary # done, return the dictionary
 
+def print_table(array):
+    # get col_width
+    col_width = []
+    for row in array:
+        for i, cell in enumerate(row):
+            if len(col_width) <= i:
+                col_width.append(0)
+            if len(cell) > col_width[i]:
+                col_width[i] = len(cell)
+    # get total width
+    total_width = 0
+    for width in col_width:
+        total_width += width
+    # print output
+    for row_index,row in enumerate(array):
+        output_row = []
+        for i,cell in enumerate(row):
+            width = col_width[i]
+            output_row.append(cell.ljust(width, ' '))
+        output_row = ' | '.join(output_row)
+        print(output_row)
+        separator = '-' if row_index>0 else '='
+        print(''.ljust(total_width+(3*(len(row)-1)) , separator))
 
 def add_task(arg_dict={}):
     kanban = load_kanban()
@@ -407,15 +437,65 @@ def kanban(arg_dict={}):
         output = []
         for board_id in boards:
             task = boards[board_id]['tasks'][i]
-            output.append(task['name'])
+            output.append('%s. %s %s' %(task['id'], task['name'], task['remind_on']))
         outputs.append(output)
-    print outputs
+    # print outputs
+    print_table(outputs)
 
 def pomodoro(arg_dict={}):
-    for i in range(100):
-        time.sleep(1)
-        sys.stdout.write("\r%d%%" % i)
-        sys.stdout.flush()
+    config = load_configuration()
+    kanban = load_kanban()
+    reminded_task_list = []
+    paused = False
+    state = 'work'
+    play_alarm = False
+    counter = config['work_time']
+    # get fd etc
+    fd = sys.stdin.fileno()
+    oldterm = termios.tcgetattr(fd)
+    newattr = termios.tcgetattr(fd)
+    newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+    termios.tcsetattr(fd, termios.TCSANOW, newattr)
+    oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+    try:
+        print '(c) Close     (t) Toggle Mode     (space) Pause/Resume'
+        print '          (r) Reload    (s) Turn Off Alarm'
+        while True:
+            try:
+                time.sleep(1)
+                output = '\r' + state.capitalize() + ' ' + get_formatted_counter(counter)
+                sys.stdout.write(output.ljust(50, ' '))
+                sys.stdout.flush()
+                if not paused:
+                    counter -= 1
+                    if counter == 0:
+                        switch_beep()
+                        # Switch state
+                        state = 'work' if state == 'rest' else 'rest'
+                        counter = config[state + '_time']
+                # read
+                try:
+                    user_input = sys.stdin.read(1)
+                    if user_input == ' ': # Pause/resume
+                        paused = not paused
+                    elif user_input == 'c': # Close
+                        break
+                    elif user_input == 't': # Switch state
+                        state = 'work' if state == 'rest' else 'rest' 
+                        counter = config[state + '_time']
+                    elif user_input == 'r': # Reload kanban
+                        kanban = load_kanban()
+                    elif user_input == 's': # Turn off alarm
+                        play_alarm = False
+                except IOError:
+                    pass
+            except(KeyboardInterrupt):
+                break
+    finally:
+        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+        fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+    print('')
 
 def help(arg_dict={}):
     print(' python time-wizard.py show-task')
