@@ -493,7 +493,7 @@ def pomodoro(arg_dict={}):
                             counter = config[state + '_time']
                     if play_alarm and alarm_ring:
                         alarm_beep()
-                    elif play_tick:
+                    elif play_tick and state == 'work':
                         tick_beep()
                 # show tasks
                 new_reminded_task_list = get_reminded_tasks()
@@ -530,9 +530,27 @@ def pomodoro(arg_dict={}):
     print('')
 
 def help(arg_dict={}):
-    print(' python time-wizard.py show-task')
-    print(' python time-wizard.py add-task [name:task-name] [,remind_on:Tuesday 18:00] [,remind_for:1800]')
-    print(' python time-wizard.py edit-task [id:task-id] [,name:new-task-name] [,remind_on:new-remind-on] [,remind-for:new-remind_for]')
+    print('')
+    print(' KANBAN & POMODORO')
+    print('  * time-wizard.py kanban')
+    print('  * time-wizard.py pomodoro')
+    print('')
+    print(' CONFIGURATION')
+    print('  * time-wizard.py show-config')
+    print('  * time-wizard.py edit-config key:value')
+    print('')
+    print(' BOARDS')
+    print('  * time-wizard.py show-board')
+    print('  * time-wizard.py add-board name:board-name')
+    print('  * time-wizard.py edit-board id:board-id, key:board-name')
+    print('  * time-wizard.py delete-board id:board-id')
+    print('')
+    print(' TASKS')
+    print('  * time-wizard.py show-task')
+    print('  * time-wizard.py add-task key:value, key:value,...')
+    print('  * time-wizard.py edit-task id:task-id, key:value,...')
+    print('  * time-wizard.py delete-task id:task-id')
+    print(' Available Keys: name, board, remind_on, remind_for ')
 
 def test(arg_dict={}):
     pass
