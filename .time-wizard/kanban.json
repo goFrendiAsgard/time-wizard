@@ -1,6 +1,1 @@
-{"tasks": {
-    "1":{"remind_for": 1800, "remind_on": "Tuesday 10:15", "id": "1", "name": "P. Dasar II (A)", "board": "4"}, 
-    "2":{"board": "4", "remind_on": "Tuesday 07:45", "remind_for": 1800, "name": "Web Lanjut (C)", "id": "2"}, 
-    "3":{"remind_for": 1800, "remind_on": "Tuesday 12:45", "id": "3", "name": "Web Lanjut (D)", "board": "4"}, 
-    "4":{"remind_on": "Friday 07:45", "board": "4", "name": "I.R. (A)", "remind_for": 1800}
-}, "boards": {"1": "To do", "3": "Done", "2": "Doing", "4": "Scheduled"}}
+{"tasks": {"1": {"tasks": "", "remind_on": "Tuesday 10:15", "name": "P. Dasar II (A)", "id": "1", "board": "4", "remind_for": 1800, "boards": ""}, "3": {"tasks": "", "remind_on": "Tuesday 12:45", "name": "Web Lanjut (D)", "id": "3", "board": "4", "remind_for": 1800, "boards": ""}, "2": {"tasks": "", "remind_on": "Tuesday 07:45", "name": "Web Lanjut (C)", "remind_for": 1800, "board": "4", "id": "2", "boards": ""}, "5": {"tasks": "", "remind_on": "", "boards": "", "board": "1", "remind_for": 1800, "name": "GIS google"}, "4": {"tasks": "", "remind_on": "Friday 07:45", "boards": "", "board": "4", "remind_for": 1800, "name": "I.R. (A)"}, "6": {"remind_for": 1800, "remind_on": "", "name": "remediasi", "board": "1"}}, "boards": {"1": "To do", "3": "Done", "2": "Doing", "4": "Scheduled"}}

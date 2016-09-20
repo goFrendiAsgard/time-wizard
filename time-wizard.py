@@ -6,10 +6,10 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 CONFIGURATION_FILE = os.path.join(DIR_PATH, '.time-wizard/config.json')
 KANBAN_FILE = os.path.join(DIR_PATH, '.time-wizard/kanban.json')
 DAYS = [
-        ['mon', 'monday'], ['tue', 'tuesday'], ['wed', 'wednesday'],
-        ['thu', 'thursday'], ['fri', 'friday'], ['sat', 'saturday'], ['sun', 'sunday']
+        ['monday', 'mon'], ['tuesday', 'tue'], ['wedday', 'wed'],
+        ['thursday', 'thu'], ['friday', 'fri'], ['saturday', 'sat'], ['sunday', 'sun']
     ]
-DATE_SUFFIX = ['', 'st', 'nd', 'rd', 'th']
+DATE_SUFFIX = ['st', 'nd', 'rd', 'th']
 DEFAULT_CONFIGURATION = {
         'work_time' : 25 * 60,
         'rest_time' : 5 * 60,
@@ -165,11 +165,13 @@ def switch_beep():
     beep(file_name)
 
 def parse_str_timestamp_keyword(string, keyword, localtime):
+    keyword = keyword.lower()
+    string = string.lower()
     (year, mon, mday, hour, minute, sec, wday, yday, dst) = localtime
     year = str(year).rjust(4,"0")
     mon = str(mon).rjust(2,"0")
     mday = str(mday).rjust(2,"0")
-    if string[:len(keyword)].lower() == keyword.lower():
+    if string[:len(keyword)] == keyword:
         string = string.replace(keyword, "%s-%s-%s" % (year, mon, mday))
     return string
 
@@ -190,6 +192,7 @@ def complete_str_timestamp(string):
     # monthly (eg: every 1st, 1st, 1)
     alias = str(mday)
     for suffix in DATE_SUFFIX:
+        break
         string = parse_str_timestamp_keyword(string, alias+suffix, localtime)
     # stars
     aliases = ("*-*-*",
@@ -449,8 +452,11 @@ def kanban(arg_dict={}):
     for i in range(max_task_count):
         output = []
         for board_id in boards:
-            task = boards[board_id]['tasks'][i]
-            output.append('%s. %s %s' %(task['id'], task['name'], task['remind_on']))
+            if i >= len(boards[board_id]['tasks']):
+                output.append('')
+            else:
+                task = boards[board_id]['tasks'][i]
+                output.append('%s. %s %s' %(task['id'], task['name'], task['remind_on']))
         outputs.append(output)
     # print outputs
     print_table(outputs)
@@ -475,8 +481,8 @@ def pomodoro(arg_dict={}):
     oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
     try:
-        print '(q) Quit        (t) Toggle Mode     (space) Pause/Resume'
-        print '   (k) Toggle tick    (r) Reload    (s) Turn Off Alarm'
+        print '(q) Quit  (t) Toggle Mode  (space) Pause/Resume'
+        print '(k) Toggle tick  (r) Reload  (s) Turn Off Alarm'
         while True:
             try:
                 # small counter is used to make the system more responsive
@@ -500,6 +506,9 @@ def pomodoro(arg_dict={}):
                 if new_reminded_task_list != old_reminded_task_list:
                     old_reminded_task_list = new_reminded_task_list
                     alarm_ring = True
+                    for task_id in old_reminded_task_list:
+                        task_name = old_reminded_task_list[task_id]['name']
+                        print task_name
                 # show pomodoro
                 output = '\r\033[1;37m' + state.upper() + '\033[0;0m ' + get_formatted_counter(counter)
                 sys.stdout.write(output.ljust(30, ' '))
@@ -553,6 +562,9 @@ def help(arg_dict={}):
     print(' Available Keys: name, board, remind_on, remind_for ')
 
 def test(arg_dict={}):
+    print complete_str_timestamp('Tuesday 15:00')
+    print complete_str_timestamp('2016-09-09 11:10')
+    print complete_str_timestamp('Wednesday 14:00')
     pass
 
 if __name__ == '__main__':
