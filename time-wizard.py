@@ -421,6 +421,7 @@ def show_config(arg_dict={}):
         print('%s\t:%s' %(key.ljust(20,' '), configuration[key]))
 
 def kanban(arg_dict={}):
+    mode = arg_dict['mode'] if 'mode' in arg_dict.keys() else ''
     kanban = load_kanban()
     boards = kanban['boards']
     tasks = kanban['tasks']
@@ -456,7 +457,10 @@ def kanban(arg_dict={}):
                 output.append('')
             else:
                 task = boards[board_id]['tasks'][i]
-                output.append('%s. %s %s' %(task['id'], task['name'], task['remind_on']))
+                if mode.lower() == 'minimal' or mode.lower() == 'mini':
+                    output.append('%s. %s' %(task['id'], task['name']))
+                else:
+                    output.append('%s. %s %s' %(task['id'], task['name'], task['remind_on']))
         outputs.append(output)
     # print outputs
     print_table(outputs)
@@ -464,9 +468,9 @@ def kanban(arg_dict={}):
 def pomodoro(arg_dict={}):
     config = load_configuration()
     kanban = load_kanban()
-    old_reminded_task_list = []
+    old_reminded_task_list = {}
     paused = False
-    play_alarm = False
+    play_alarm = True
     alarm_ring = False
     play_tick = config['play_tick']
     state = 'work'
@@ -499,7 +503,7 @@ def pomodoro(arg_dict={}):
                             counter = config[state + '_time']
                     if play_alarm and alarm_ring:
                         alarm_beep()
-                    elif play_tick and state == 'work':
+                    elif play_tick and state == 'work' and not paused:
                         tick_beep()
                 # show tasks
                 new_reminded_task_list = get_reminded_tasks()
@@ -508,7 +512,7 @@ def pomodoro(arg_dict={}):
                     alarm_ring = True
                     for task_id in old_reminded_task_list:
                         task_name = old_reminded_task_list[task_id]['name']
-                        print task_name
+                        print('\r * %s\n' %(task_name,))
                 # show pomodoro
                 output = '\r\033[1;37m' + state.upper() + '\033[0;0m ' + get_formatted_counter(counter)
                 sys.stdout.write(output.ljust(30, ' '))
