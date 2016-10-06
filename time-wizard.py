@@ -35,6 +35,9 @@ DEFAULT_TASK = {
         'remind_for' : 30 * 60
     }
 
+def get_terminal_col_size():
+    return int(os.popen('stty size', 'r').read().split()[1])
+
 def is_string_or_unicode(value):
     return type(value) in (str, unicode)
 
@@ -273,15 +276,22 @@ def print_table(array):
     for width in col_width:
         total_width += width
     # print output
+    size = get_terminal_col_size()
+    output = ''.ljust(total_width+(3*(len(row)-1)), '=')
+    output = output[:size]
+    print output
     for row_index,row in enumerate(array):
         output_row = []
         for i,cell in enumerate(row):
             width = col_width[i]
             output_row.append(cell.ljust(width, ' '))
         output_row = ' | '.join(output_row)
+        output_row = output_row[:size]
         print(output_row)
         separator = '-' if row_index>0 else '='
-        print(''.ljust(total_width+(3*(len(row)-1)) , separator))
+        output_row = ''.ljust(total_width+(3*(len(row)-1)) , separator)
+        output_row = output_row[:size]
+        print(output_row)
 
 def get_reminded_tasks():
     kanban = load_kanban()
@@ -514,8 +524,13 @@ def pomodoro(arg_dict={}):
                         task_name = old_reminded_task_list[task_id]['name']
                         print('\r * %s\n' %(task_name,))
                 # show pomodoro
-                output = '\r\033[1;37m' + state.upper() + '\033[0;0m ' + get_formatted_counter(counter)
-                sys.stdout.write(output.ljust(30, ' '))
+                localtime   = time.localtime()
+                time_string  = time.strftime('%a, %b %d, %H:%M', localtime)
+                output = '\r' + time_string + ' | \033[1;37m' + state.upper() + '\033[0;0m ' + get_formatted_counter(counter)
+                if get_terminal_col_size() > 35:
+                    sys.stdout.write(output.ljust(35, ' '))
+                else:
+                    sys.stdout.write('\r')
                 sys.stdout.flush()
                 # read user input
                 try:
