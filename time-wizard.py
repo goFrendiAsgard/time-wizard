@@ -82,10 +82,11 @@ def get_board_id(board):
     kanban = load_kanban()
     boards = kanban['boards']
     board = str(board)
-    if board in boards.keys():
+    if board in boards.keys(): # by id
         return board
-    else:
-        board_id = [x for x in boards.keys() if boards[x] == board]
+    else: # by caption
+        board = board.lower().replace(' ', '')
+        board_id = [x for x in boards.keys() if boards[x].lower().replace(' ', '') == board]
         if len(board_id) > 0:
             return str(board_id[0])
     return ''
