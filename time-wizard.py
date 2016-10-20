@@ -89,6 +89,9 @@ def get_board_id(board):
         board_id = [x for x in boards.keys() if boards[x].lower().replace(' ', '') == board]
         if len(board_id) > 0:
             return str(board_id[0])
+    # by default return the first key
+    for board in boards.keys():
+        return board
     return ''
 
 def load_json_file(file_name, validator, default_dictionary):
@@ -97,13 +100,13 @@ def load_json_file(file_name, validator, default_dictionary):
     dictionary = default_dictionary
     # get dictionary from file if exists
     if os.path.exists(file_name):
-        with open(file_name, "r") as infile:
+        with open(file_name, 'r') as infile:
             dictionary = json.load(infile)
     # validate the dictionary
     return validate_dictionary(dictionary, validator, default_dictionary)
 
 def save_json_file(file_name, dictionary):
-    with open(file_name, "w+") as outfile:
+    with open(file_name, 'w+') as outfile:
         json.dump(dictionary, outfile)
 
 
@@ -172,19 +175,19 @@ def parse_str_timestamp_keyword(string, keyword, localtime):
     keyword = keyword.lower()
     string = string.lower()
     (year, mon, mday, hour, minute, sec, wday, yday, dst) = localtime
-    year = str(year).rjust(4,"0")
-    mon = str(mon).rjust(2,"0")
-    mday = str(mday).rjust(2,"0")
+    year = str(year).rjust(4,'0')
+    mon = str(mon).rjust(2,'0')
+    mday = str(mday).rjust(2,'0')
     if string[:len(keyword)] == keyword:
-        string = string.replace(keyword, "%s-%s-%s" % (year, mon, mday))
+        string = string.replace(keyword, '%s-%s-%s' % (year, mon, mday))
     return string
 
 def complete_str_timestamp(string):
     localtime = time.localtime()
     (year, mon, mday, hour, minute, sec, wday, yday, dst) = localtime
-    year = str(year).rjust(4,"0")
-    mon = str(mon).rjust(2,"0")
-    mday = str(mday).rjust(2,"0")
+    year = str(year).rjust(4,'0')
+    mon = str(mon).rjust(2,'0')
+    mday = str(mday).rjust(2,'0')
     # everyday, daily
     string = parse_str_timestamp_keyword(string, 'everyday', localtime)
     string = parse_str_timestamp_keyword(string, 'daily', localtime)
@@ -199,34 +202,34 @@ def complete_str_timestamp(string):
         break
         string = parse_str_timestamp_keyword(string, alias+suffix, localtime)
     # stars
-    aliases = ("*-*-*",
-            "*-*-%s" % (mday),
-            "*-%s-*" % (mon),
-            "*-%s-%s" % (mon, mday),
-            "%s-*-%s" % (year, mday),
-            "%s-%s-*" % (year, mon),
-            "%s-%s-%s" % (year, mon, mday)
+    aliases = ('*-*-*',
+            '*-*-%s' % (mday),
+            '*-%s-*' % (mon),
+            '*-%s-%s' % (mon, mday),
+            '%s-*-%s' % (year, mday),
+            '%s-%s-*' % (year, mon),
+            '%s-%s-%s' % (year, mon, mday)
             )
     for alias in aliases:
         string = parse_str_timestamp_keyword(string, alias, localtime)
     # ensure that string is valid date, otherwise make it empty string
     try:
-        datetime.datetime.strptime(string, "%Y-%m-%d %H:%M:%S")
+        datetime.datetime.strptime(string, '%Y-%m-%d %H:%M:%S')
         return string
     except ValueError:
         try:
-            datetime.datetime.strptime(string, "%Y-%m-%d %H:%M")
-            return string+":00"
+            datetime.datetime.strptime(string, '%Y-%m-%d %H:%M')
+            return string+':00'
         except ValueError:
-            return ""
+            return ''
 
 def str_to_timestamp(string):
     string = complete_str_timestamp(string)
-    if string != "":
-        return time.mktime(datetime.datetime.strptime(string, "%Y-%m-%d %H:%M:%S").timetuple())
+    if string != '':
+        return time.mktime(datetime.datetime.strptime(string, '%Y-%m-%d %H:%M:%S').timetuple())
 
 def timestamp_to_str(timestamp):
-    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
 
 def get_formatted_counter(counter):
     counter = int(counter)
@@ -296,14 +299,14 @@ def print_table(array):
 
 def get_reminded_tasks():
     kanban = load_kanban()
-    tasks = kanban["tasks"]
+    tasks = kanban['tasks']
     current_time = time.time()
     reminded_tasks = {}
     for task_id in tasks.keys():
         task = tasks[task_id]
-        if complete_str_timestamp(task["remind_on"].strip()) != "":
-            time_start = str_to_timestamp(task["remind_on"])
-            time_stop = time_start + float(task["remind_for"])
+        if complete_str_timestamp(task['remind_on'].strip()) != '':
+            time_start = str_to_timestamp(task['remind_on'])
+            time_stop = time_start + float(task['remind_for'])
             if time_start < current_time and time_stop > current_time:
                 reminded_tasks[task_id] = task
     return reminded_tasks
@@ -322,6 +325,8 @@ def add_task(arg_dict={}):
             # modify task's board
             if 'board' in arg_dict.keys():
                 task['board'] = get_board_id(arg_dict['board'])
+            else:
+                task['board'] = get_board_id('')
             kanban['tasks'][id] = task
             save_kanban(kanban)
         else:
@@ -343,6 +348,8 @@ def edit_task(arg_dict={}):
             # modify task's board
             if 'board' in arg_dict.keys():
                 task['board'] = get_board_id(arg_dict['board'])
+            else:
+                task['board'] = get_board_id('')
             kanban['tasks'][id] = task
             save_kanban(kanban)
         else:
@@ -582,9 +589,10 @@ def help(arg_dict={}):
     print(' Available Keys: name, board, remind_on, remind_for ')
 
 def test(arg_dict={}):
-    print complete_str_timestamp('Tuesday 15:00')
-    print complete_str_timestamp('2016-09-09 11:10')
-    print complete_str_timestamp('Wednesday 14:00')
+    print(complete_str_timestamp('Tuesday 15:00'))
+    print(complete_str_timestamp('2016-09-09 11:10'))
+    print(complete_str_timestamp('Wednesday 14:00'))
+    print(get_board_id(''))
     pass
 
 if __name__ == '__main__':
